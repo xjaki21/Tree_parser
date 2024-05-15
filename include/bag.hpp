@@ -12,6 +12,8 @@ class bag{
         ~bag();
         void add(Val v);
         void remove();
+        bool operator==(const bag<Val>& b) const;
+        bool operator!=(const bag<Val>& b) const;
     private:
         struct Cell{
             Val val;
@@ -56,4 +58,29 @@ void bag<Val>::remove(){
         head=head->next;
         delete pc;
     }
+}
+
+
+
+template <typename Val>
+bool bag<Val>::operator==(const bag<Val>& b) const{
+    pCell ph=head;
+    pCell pb=b.head;
+    bool equal=true;
+    while(ph->val==pb->val){
+        ph=ph->next;
+        pb=pb->next;
+    }
+    return ph==pb;
+}
+template <typename Val>
+bool bag<Val>::operator!=(const bag<Val>& b) const{
+    pCell ph=head;
+    pCell pb=b.head;
+    while(ph->val==pb->val){
+        ph=ph->next;
+        pb=pb->next;
+    }
+    return ph!=pb;
+
 }
