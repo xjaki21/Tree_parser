@@ -37,15 +37,22 @@ template <typename T>
 trie<T>::trie(){
     m_p=nullptr;
     m_l=nullptr;
-    m_c{default};
+    //m_c();
     m_w=0.0;
 }
 template <typename T>
 trie<T>::trie(double w){
     m_p=nullptr;
     m_l=nullptr;
-    m_c{default};
+    //m_c();
     m_w=w;
+}
+template <typename T>
+trie<T>::trie(trie<T> const& t){
+    m_p=t.m_p;
+    m_l=t.m_l;
+    m_w=t.m_w;
+    m_c=t.m_c;
 }
 
 
@@ -97,10 +104,27 @@ bag<trie<T>> const& trie<T>::get_children() const{
  /* comparison */
 template <typename T>
 bool trie<T>::operator==(trie<T> const& t) const{
-    return this->m_c==t.m_c;
+    return this->m_l==t.m_l && this->m_p==t.m_p && this->m_w==t.m_w && this- this->m_c==t.m_c;
 }
 template <typename T>
-bool trie<T>::operator!=(trie<T> const&) const{
-    return this->m_c!=t.m_c;
+bool trie<T>::operator!=(trie<T> const& t) const{
+    return this->m_l!=t.m_l && this->m_p!=t.m_p && this->m_w!=t.m_w && this- this->m_c!=t.m_c;
 }
 
+
+
+
+/*streams*/
+template <typename T>
+std::ostream& operator<<(std::ostream& os, trie<T> const& t){
+    if(t.get_label()!=nullptr){
+        os<<t.get_label()<<" ";
+    }
+    os<<t.get_label()<<" ";
+    os<<t.get_weight()<<" ";
+    os<<"childern={";
+    //os<<t.get_weight()<<" ";
+    t.get_children().print();
+    os<<"}";
+    return os;
+}

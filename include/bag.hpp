@@ -12,6 +12,8 @@ class bag{
         ~bag();
         void add(Val v);
         void remove();
+        bool empty() const;
+        void print() const;
         bool operator==(const bag<Val>& b) const;
         bool operator!=(const bag<Val>& b) const;
     private:
@@ -60,7 +62,22 @@ void bag<Val>::remove(){
     }
 }
 
+template<typename Val>
+bool bag<Val>::empty() const{
+    return head==nullptr;
+}
 
+template<typename Val>
+void bag<Val>::print() const{
+    pCell pc=head;
+    while(pc!=nullptr){
+        std::cout<<pc->val;
+        if(pc->next!=nullptr){
+            std::cout<<",";
+        }
+        pc=pc->next;
+    }
+}
 
 template <typename Val>
 bool bag<Val>::operator==(const bag<Val>& b) const{
