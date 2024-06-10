@@ -64,7 +64,7 @@ Un nodo interno del formato associato a `trie<T>` viene invece codificato testua
 
 	children = { x1 trie1, x2 trie2, ... }
 
-dove `children` è la lista di figli del nodo; `x1`, `x2`, ... sono valori *distinti* (importante! valori ripetuti tra i figli sono da considerarsi un errore di formato) di tipo `T` che etichettano gli archi entranti nei figli e `trie1`, `trie2`, ... sono (ricorsivamente) i figli del nodo (dei `trie<T>`).
+dove `children` è la lista di figli del nodo; `x1`, `x2`, ... sono valori *distinti* (importante! valori ripetuti tra le etichette dei figli sono da considerarsi un errore di formato) di tipo `T` che etichettano gli archi entranti nei figli e `trie1`, `trie2`, ... sono (ricorsivamente) i figli del nodo (dei `trie<T>`).
 Notare che le coppie `x trie` sono separate da una virgola. Per esempio, il seguente è un file valido in formato `trie<char>` che rappresenta il trie di Figura 1.
 
 	children = {
@@ -190,6 +190,8 @@ Costruisce una foglia con peso pari all'argomento `w`. Per esempio, `trie<char>:
 	template <typename T>
 	trie<T>& trie<T>::operator=(trie<T>&&);
 
+**Nota**: copy e move assignments devono lasciare il trie a sinistra dell'operatore in uno stato consistente. In particolare, se `operator=` viene usato per rimpiazzare il sotto-trie `u` di un trie `T` con il sotto-trie `u'` di un secondo trie `T'`, allora la copia di `u'` inserita in `T` dovrà avere il padre in `T`, non in `T'`! stesso discorso per l'etichetta entrante in `u'`, che deve rimanere quella che aveva `u` in `T` (questa questione è stata discussa più in dettaglio in una delle issues, controllate le issues "closed").
+
 ### 3.4. Setters/Getters
 
 I setters/getters sono funzioni di supporto che facilitano la scrittura del parser (il parser è un insieme di funzioni esterne alla classe, che non hanno quindi accesso ai membri privati di trie).
@@ -244,7 +246,8 @@ Infine, il metodo
 	template <typename T>
 	void add_child(trie<T> const& c);
 
-aggiunge il nodo figlio `c` al nodo corrente (che chiamiamo il padre `p`). Ricordatevi di specificare un'etichetta `l` per l'arco `(p,c)` usando il metodo `set_label` su `c` prima di passarlo come argomento di `add_child`. Il figlio `c` sarà quindi aggiunto alla `bag` dei figli di `p` in posizione appropriata (vedi nota sotto).
+aggiunge il nodo figlio `c` al nodo corrente (che chiamiamo il padre `p`). Ricordatevi di specificare un'etichetta `l` per l'arco `(p,c)` usando il metodo `set_label` su `c` prima di passarlo come argomento di `add_child`. Il figlio `c` sarà quindi aggiunto alla `bag` dei figli di `p` in posizione appropriata (vedi nota sotto). 
+**Nota**: quando questa funzione viene chiamata su una foglia, il nodo cessa di essere una foglia dato che ha acquisito un figlio. In particolare, il peso della foglia viene perso.
 
 **Importante:** I figli sono memorizzati nel container `bag` in **ordine crescente** di etichetta (si ricordi che le etichette sono tutte distinte). L'ordinamento viene imposto usando `operator<` definito sul tipo `T`.
 
@@ -380,9 +383,9 @@ Su questo trie, `t2.begin()` è quindi un `leaf_iterator` alla foglia di peso `2
 Infine, il metodo
 
 	template <typename T>
-	trie<T> const& trie<T>::leaf_iterator::get_leaf() const;
+	trie<T>& trie<T>::leaf_iterator::get_leaf() const;
 
-restituisce una const reference alla foglia puntata dall'istanza di `leaf_operator` sul quale è chiamato.
+restituisce una reference alla foglia puntata dall'istanza di `leaf_operator` sul quale è chiamato.
 
 ### 3.8. Foglia di peso massimo
 
@@ -541,8 +544,8 @@ Seguite **esattamente** queste istruzioni. Qualsiasi altra cosa (archivio non in
 
 Le scadenze estive sono:
 
-- 15 giugno;
-- 15 luglio.
+- **20** giugno;
+- **20** luglio.
 
 I seguenti appelli saranno a settembre e gennaio. 
 

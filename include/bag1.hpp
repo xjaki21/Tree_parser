@@ -8,7 +8,7 @@ template <typename Val>
 class bag{
     private:
         struct Cell{
-            Val val;
+            const Val& val;
             Cell* next;
             Cell* prev;
         };
@@ -18,15 +18,13 @@ class bag{
     public:
         bag();
         bag(const bag& b);
-        bag(bag&& b);
         ~bag();
-        Val& get_head();
-        Val& get_tail();
-        const Val& get_head() const;
+        const Val& first_leaf() const;
         const Val& get_tail() const;
         Val& at(int pos);
         void prepend(const Val& v);
         void append(const Val& v);
+        void add_at(Val v,int pos);
         void remove();
         bool empty() const;
         void print() const;
@@ -41,7 +39,7 @@ class bag{
             public:
                 using iterator_category = std::forward_iterator_tag;
                 using value_type = Val;
-                using pointer = Val*;
+                using pointer =  Val*;
                 using reference = Val&;
 
                 bag_iterator(Cell* ptr);
@@ -59,6 +57,8 @@ class bag{
         void insert(bag_iterator it,const Val& v);
         bag_iterator begin();
         bag_iterator end();
+
+
 };
 
 template <typename Val>
@@ -78,20 +78,20 @@ bag<Val>::bag(const bag& b){
 }
 
 template <typename Val>
-bag<Val>::bag(bag&& b){
-    std::cout<<"move bag"<<std::endl;
-    head=b.head;
-    tail=b.tail;
-    b.head=b.tail=nullptr;
-}
-
-template <typename Val>
 bag<Val>::~bag(){
     while(head!=nullptr){
         pCell pc=head;
         head=head->next;
         delete pc;
     }
+    head=nullptr;
+
+}
+
+template <typename Val>
+const Val& bag<Val>::first_leaf() const{
+    if(head!=nullptr && head->val.get_children().g)
+        return head->val->get_children()->first_leaf();
 }
 
 template <typename Val>
@@ -114,47 +114,56 @@ void bag<Val>::append(const Val& val){
         head=tail=pn;
     }
 }
+template <typename Val>
+void bag<Val>::add_at(Val v,int pos){
+    pCell pn=new Cell{v,nullptr,nullptr};
+    int i=0;
+    pCell pc=head;
+    while(pc!=nullptr && i<pos){
+        i++;
+        pc=pc->next;
+    }
+    if(pc!=nullptr && head!=nullptr){
+        pn->next=pc;
+        pn->prev=pc->prev;
+        pc->prev=pn;
+    }else if(head==nullptr){
+        head=tail=pn;
+    }else{
+        tail->next=pn;
+        pn->prev=tail;
+        tail=pn;
+    }
+
+}
 
 template <typename Val>
-Val& bag<Val>::get_head(){
-    if(head!=nullptr)
-        return head->val;
-    else{
-        //eccezione
+void bag<Val>::remove(){
+    if(head!=nullptr){
+        pCell pc=head;
+        head=head->next;
+        delete pc;
     }
 }
-template <typename Val>
-Val& bag<Val>::get_tail(){
-    if(tail!=nullptr)
-        return tail->val;
-    else{
-        //eccezione
-    }
-}
-
-template <typename Val>
-const Val& bag<Val>::get_head() const{
-    if(head!=nullptr)
-        return head->val;
-    else{
-        //eccezione
-    }
-}
-template <typename Val>
-const Val& bag<Val>::get_tail() const{
-    if(tail!=nullptr)
-        return tail->val;
-    else{
-        //eccezione
-    }
-}
-
 
 template<typename Val>
 bool bag<Val>::empty() const{
     return head==nullptr;
 }
-
+template <typename Val>
+Val& bag<Val>::at(int pos){
+    int i=0;
+    pCell pc=head;
+    while(pc!=nullptr && i<pos){
+        i++;
+        pc=pc->next;
+    }
+    if(pc==nullptr){
+        return head->val;
+    }else{
+        return pc->val;
+    }
+}
 
 template<typename Val>
 void bag<Val>::print() const{
@@ -186,6 +195,30 @@ bag<Val>& bag<Val>::operator=(const bag<Val>& b){
     return *this;
 }
 
+
+
+template <typename Val>
+bool bag<Val>::operator==(const bag<Val>& b) const{
+    pCell ph=head;
+    pCell pb=b.head;
+    bool equal=true;
+    while(ph->val==pb->val){
+        ph=ph->next;
+        pb=pb->next;
+    }
+    return ph==pb;
+}
+template <typename Val>
+bool bag<Val>::operator!=(const bag<Val>& b) const{
+    pCell ph=head;
+    pCell pb=b.head;
+    while(ph->val==pb->val){
+        ph=ph->next;
+        pb=pb->next;
+    }
+    return ph!=pb;
+
+}
 
 
 /*
@@ -232,7 +265,6 @@ typename bag<Val>::Cell* bag<Val>::bag_iterator::get_ptr(){
     return m_ptr;
 }
 
-
 template <typename Val>
 void bag<Val>::insert(bag<Val>::bag_iterator it,const Val& v){
     Cell* ptr=it.get_ptr();
@@ -246,6 +278,7 @@ void bag<Val>::insert(bag<Val>::bag_iterator it,const Val& v){
             ptr->prev=pn;
 
         }
+
     }else{
         prepend(v);
     }
@@ -260,3 +293,4 @@ template <typename Val>
 typename bag<Val>::bag_iterator bag<Val>::end(){
     return {nullptr};
 }
+
