@@ -1,5 +1,6 @@
 #include "../src/trie.cpp"
 #include <iostream>
+#include <algorithm>
 #include <utility>
 using namespace std;
 trie<string> new_child(string l,trie<string>& p,double w){
@@ -13,34 +14,61 @@ trie<string> new_child(string l,trie<string>& p,double w){
 
 int main(){
     trie<string> t;
+    //t.set_label(new string("root"));
     //trie<string>* a=new_child("gatto",t,1.2);
-    string s="gatto";
-    trie<string> a=std::move(new_child(s,t,2.1));
-    trie<string> b=std::move(new_child("cane",a,1.1));
-    a.add_child(b);
+    trie<string> compilers=new_child("compilers",t,5.1);
+    trie<string> gpp=new_child("g++",compilers,2.8);
+    trie<string> javac=new_child("javac",compilers,3.1);
 
-    trie<string> c=std::move(new_child("criceto",t,2.3));
-    string c_s="criceto";
-    
-    t.add_child(a);
-    t.add_child(c);
-/*
-    auto f_leaf=t.begin();
-    cout<<"prima foglia: "<<f_leaf.get_leaf()<<endl;
-    auto e_leaf=t.end();
-    cout<<"ultima foglia: "<<e_leaf.get_leaf()<<endl;
-   */
-    
-    //t.add_child(b);
-    //a.add_child(b);
-    //t.add_child(c);
-   // t.add_child(a);
+    trie<string> languages=new_child("languages",t,3.0);
+    trie<string> cpp=new_child("c++",languages,1.1);
+    trie<string> java=new_child("java",languages,0.5);
+    compilers.add_child(gpp);
+    compilers.add_child(javac);
 
- 
+    languages.add_child(java);
+    languages.add_child(cpp);
+
+    //compilers=languages;
 
 
+    t.add_child(languages);
+    t.add_child(compilers);
+
+    trie<string> t1=t;
     //t.add_child(c);
     std::cout<<t<<std::endl;
+    std::cout<<t1<<std::endl;
+
+    //auto root=t.root();
+    //cout<<"root: "<<*root<<endl;
+    //cout<<compilers<<endl;
     //t.get_children().print();
+
+
+    /*
+    while(it!=t.end()){
+        cout<<it.get_leaf()<<endl;
+        ++it;
+    }
+    */
+    
+
+
+for (auto leaf_it = t.begin(); leaf_it != t.end(); leaf_it++) {
+	trie<string>::node_iterator node_it = leaf_it; // we convert leaf_it into node_it to navigate from leaf to root
+	std::vector<string> s;
+	while (node_it != t.root()) {
+		s.push_back(*node_it);
+		++node_it;
+	}
+	std::reverse(s.begin(), s.end());
+	for (auto const& x: s) std::cout << x << ' ';
+	std::cout << '\n';
+}
+
+
+
+    
     return 0;
 }
