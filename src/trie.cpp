@@ -254,8 +254,9 @@
             auto it=m_c.begin();
             bool inserted=false;
             while(it!=m_c.end() && !inserted){ 
-
-                if(*c.get_label()<*it->get_label()){
+                if(*c.get_label()==*it->get_label()){
+                    throw parser_exception("FORMAT ERROR: LABELS ARE REPEATED");
+                }else if(*c.get_label()<*it->get_label()){
                     inserted=true;
                     trie<T>& child=m_c.insert(it,c);
                     child.set_label(c.m_l);
@@ -322,6 +323,7 @@
  /* comparison */
     template <typename T>
     bool trie<T>::operator==(trie<T> const& t) const{
+        //DA SISTEMARE
         if(get_label()!=nullptr && t.get_label()!=nullptr)
             return *m_l==*t.m_l && m_w==t.m_w && m_c==t.m_c;
         else
@@ -355,4 +357,117 @@
         os<<"}";
         return os;
 
+    }
+/*
+CONTEXT FREE GRAMMAR
+
+*/
+static void skip_blank_spaces(std::istream& is) {
+    char c = 0;
+    is >> c;
+    is.putback(c);
+}
+
+static bool check_character(std::istream& is,char chr){
+    skip_blank_spaces(is);
+    char c=0;
+    c=is.peek();
+    if(c!=chr) return false;
+    else return true;
+
+}
+static bool is_children(std::istream& is){
+    skip_blank_spaces(is);
+    std::string str_children="children";
+    char c=0;
+    bool s=true;
+    int i=0;
+    while(i<str_children.length() && s){
+        c=is.peek();
+        if(c!=str_children.at(i)){
+            s=false;
+        }else{
+            is>>c;            
+        }
+        i++;
+    }
+    return s;
+}
+template <typename T>
+trie<T> TRIE(std::istream& is);
+
+    template <typename T>
+    trie<T> CHILD(std::istream& is){
+       // skip_blank_spaces(is);ù
+        char c=0;
+        trie<T> t;
+
+        T label;
+        is>>label;
+        std::cout<<"label: "<<label<<std::endl;
+        t.set_label(&label);
+        if(is_children(is)){
+            t=TRIE<T>(is);
+        }else{
+            //foglia
+            double weight=0.0;
+            is>>weight;
+            std::cout<<"weight: "<<weight<<std::endl;
+            if(!is_children(is)) throw parser_exception("LEAF DOESNT END WITH children={}");
+            if(!check_character(is,'=')) throw parser_exception("LEAF DOESNT END WITH children={}");
+            is>>c;
+            if(!check_character(is,'{')) throw parser_exception("LEAF DOESNT END WITH children={}");
+            is>>c;
+            if(!check_character(is,'}')) throw parser_exception("LEAF DOESNT END WITH children={}");
+            is>>c;
+            t.set_weight(weight);
+        }
+        return t;
+    }
+    template <typename T>
+    trie<T> TRIE(std::istream& is){
+        char c=0;
+
+        if(!check_character(is,'=')) throw parser_exception("FILE IS NOT VALID");
+        is>>c;
+
+        if(!check_character(is,'{')) throw parser_exception("FILE IS NOT VALID");
+        is>>c;
+        trie<T> t(0.0);
+
+       // skip_blank_spaces(is);
+       while(true){
+            trie<T> child=CHILD<T>(is);
+            t.add_child(child);
+            if(!check_character(is,',')){
+                c=is.peek();
+                //std::cout<<"virgola: "<<c<<std::endl;
+
+                break;
+            }else{
+                is>>c;
+                std::cout<<"virgola: "<<c<<std::endl;
+            }
+       }
+        if(!check_character(is,'}')) throw parser_exception("FILE IS NOT VALID: NOT ENDS WITH '}'");
+        if(is>>c){
+            return t;
+        }else{
+            throw parser_exception("FILE IS NOT VALID: NOT ENDS WITH '}'");
+        }
+    } 
+
+    template <typename T>
+    std::istream& operator>>(std::istream& is,trie<T>& t){
+        if(!is_children(is)) throw parser_exception("FILE IS NOT A TRIE");
+        t=TRIE<T>(is);
+        //skip_blank_spaces(is);
+        // Prova a leggere un altro carattere per verificare se lo stream è finito
+        char c=0;
+        while (is.peek()!=EOF && is.get(c)) {
+            if (!std::isspace(c)) {
+                throw parser_exception("FILE IS NOT VALID: EXTRA CHARACTERS AFTER '}'");
+            }
+        }
+        return is;
     }
