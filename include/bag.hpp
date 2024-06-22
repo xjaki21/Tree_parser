@@ -272,7 +272,7 @@ bool bag<Val>::operator!=(const bag<Val>& b) const{
     pCell pc=head;
     pCell pb=b.head;
     while(pc!=nullptr && pb!=nullptr){
-        if(pc->val==pb->val){
+        if(pc->val!=pb->val){
             pc=nullptr;
         }else{
             pc=pc->next;

@@ -21,12 +21,15 @@
 
     template <typename T>
     typename trie<T>::node_iterator& trie<T>::node_iterator::operator++(){
-        m_ptr=m_ptr->get_parent();
+
+        if(m_ptr->get_parent()!=nullptr)
+            m_ptr=m_ptr->get_parent();
         return *this;
     }
     template <typename T>
     typename trie<T>::node_iterator trie<T>::node_iterator::operator++(int){
-        m_ptr=m_ptr->get_parent();
+        if(m_ptr->get_parent()!=nullptr)
+            m_ptr=m_ptr->get_parent();
         return *this;
     }  
     template <typename T>
@@ -52,10 +55,18 @@
     }
     template <typename T>
     typename trie<T>::leaf_iterator& trie<T>::leaf_iterator::operator++(){
+
         if(m_ptr->get_parent()!=nullptr){
             trie<T>& parent=*m_ptr->get_parent();
             trie<T>& next=parent.get_children().next_to(get_leaf());
-            if(next==*m_ptr){
+            //std::cout<<"next: "<<next<<std::endl;
+            //std::cout<<"this_leaf: "<<get_leaf()<<std::endl;
+            //std::cout<<"equal: "<<(next==*m_ptr)<<std::endl;
+
+            if(next==*m_ptr && next.get_parent()==m_ptr->get_parent() && *next.get_label()==*m_ptr->get_label()){
+                //std::cout<<"next: "<<next<<std::endl;
+                //std::cout<<"this_leaf: "<<*m_ptr<<std::endl;
+                //std::cout<<"equal: "<<(next==*m_ptr)<<std::endl;
                 //devo scorrere sul padre e vedere se ci sono altri rami con foglie
                 leaf_iterator lf=leaf_iterator(&parent);
                 ++lf;
@@ -63,8 +74,11 @@
             }else{
                 auto next_leaf=next.begin();
                 m_ptr=next_leaf.m_ptr;
+                //std::cout<<"this_leaf: "<<get_leaf()<<std::endl;
+
             }
         }else{
+
             m_ptr=nullptr;    
         }
         return *this;
@@ -74,6 +88,9 @@
         if(m_ptr->get_parent()!=nullptr){
             trie<T>& parent=*m_ptr->get_parent();
             trie<T>& next=parent.get_children().next_to(get_leaf());
+           // std::cout<<"next: "<<next<<std::endl;
+            //std::cout<<"this_leaf: "<<get_leaf()<<std::endl;
+
             if(next==*m_ptr){
                 //devo scorrere sul padre e vedere se ci sono altri rami con foglie
                 leaf_iterator lf=leaf_iterator(&parent);
@@ -159,19 +176,21 @@
         m_l=nullptr;
         m_w=t.m_w;
         for(auto it=t.m_c.begin();it!=t.m_c.end();++it){
-            trie<T>& child=m_c.append(*it);
-            child.set_label(it->m_l);
-            child.set_parent(this);
+            add_child(*it);
         }
     }
     template <typename T>
     trie<T>::trie(trie<T>&& t){
         //m_p=t.m_p;
         //t.m_p=nullptr;
-        //m_l=t.m_l;
-        //t.m_l=nullptr;
+        m_p=nullptr;
+        m_l=t.m_l;
+        t.m_l=nullptr;
         m_w=t.m_w;
-        m_c=std::move(t.m_c);
+        for(auto it=t.m_c.begin();it!=t.m_c.end();++it){
+            add_child(*it);
+        }
+        t.m_c.clean();
     }
 
 
@@ -192,10 +211,7 @@
             m_w=t.m_w;
             m_c.clean();
             for(auto it=t.m_c.begin();it!=t.m_c.end();++it){
-                trie<T> child=*it;
-                child.set_label(it->m_l);
-                child.set_parent(this);
-                m_c.append(child);
+                add_child(*it);
             }
         }
         return *this;
@@ -204,10 +220,13 @@
     trie<T>& trie<T>::operator=(trie<T>&& t){
         if(this!=&t){
             m_w=t.m_w;
-            m_c=std::move(t.m_c);
+            m_c.clean();
+            for(auto it=t.m_c.begin();it!=t.m_c.end();++it){
+                add_child(*it);
+            }
+            t.m_c.clean();
         }
         return *this;
-
     }
 
 
@@ -244,6 +263,7 @@
     }
     template <typename T>
     void trie<T>::add_child(trie<T> const& c){
+        
         m_w=0.0;
         //m_c.add(c);
         //m_c.add_at(c,10);
@@ -323,22 +343,95 @@
  /* comparison */
     template <typename T>
     bool trie<T>::operator==(trie<T> const& t) const{
-        //DA SISTEMARE
-        if(get_label()!=nullptr && t.get_label()!=nullptr)
-            return *m_l==*t.m_l && m_w==t.m_w && m_c==t.m_c;
-        else
-            return m_l==t.m_l && m_w==t.m_w && m_c==t.m_c;
+        //DA SISTEMARE, controllo tutti i figli con bag iterator
+        auto it1=m_c.begin();
+        auto it2=t.m_c.begin();
+        bool equal=true;
+        do{
+            if(it1==m_c.end() && it2==t.m_c.end()){
+                equal=get_weight()==t.get_weight();
+                it1=m_c.end();
+                it2=t.m_c.end();
+            }else if(it1==m_c.end() || it2==t.m_c.end()){
+                equal=false;
+            }else if(it1->get_weight()!=it2->get_weight() || *it1->get_label()!=*it2->get_label() || it1->get_children()!=it2->get_children()){
+                //std::cout<<(it1->get_children()!=it2->get_children())<<std::endl;
+                //std::cout<<"falso"<<std::endl;
+                equal=false;
+            }else{
+                ++it1;
+                ++it2;
+            }
+        }while(it1!=m_c.end() && it2!=t.m_c.end() && equal);
+
+        return equal;
     }
     template <typename T>
     bool trie<T>::operator!=(trie<T> const& t) const{
-        return  m_w!=t.m_w || m_c!=t.m_c;
+        auto it1=m_c.begin();
+        auto it2=t.m_c.begin();
+        bool not_equal=false;
+        do{
+            if(it1==m_c.end() && it2==t.m_c.end()){
+                not_equal=get_weight()!=t.get_weight();
+                it1=m_c.end();
+                it2=t.m_c.end();
+            }else if(it1==m_c.end() || it2==t.m_c.end()){
+                not_equal=true;
+            }else if(it1->get_weight()!=it2->get_weight() || *it1->get_label()!=*it2->get_label() || it1->get_children()!=it2->get_children()){
+                //std::cout<<(it1->get_children()!=it2->get_children())<<std::endl;
+                not_equal=true;
+            }else{
+                ++it1;
+                ++it2;
+            }
+        }while(it1!=m_c.end() && it2!=t.m_c.end() && !not_equal);
+        
+        return not_equal;
     }
 
-
+/* max-weight leaf */
+    template <typename T>
+    trie<T>& trie<T>::max(){
+        leaf_iterator it=begin();
+        double max_weight=it.get_leaf().get_weight();
+        ++it;
+        while(it!=end()){
+            if(it.get_leaf().get_weight()>max_weight){
+                max_weight=it.get_leaf().get_weight();
+            }
+            ++it;
+        }
+        bool found=false;
+        it=begin();
+        while(it!=end() && !found){
+            if(it.get_leaf().get_weight()==max_weight){
+                found=true;
+            }else{
+                ++it;
+            }
+        }
+        return it.get_leaf();
+    }
 /* prefix-search */
     template <typename T>
     trie<T>& trie<T>::operator[](std::vector<T> const& v){
-        
+        auto it=m_c.begin();
+        bool found=false;
+        while(it!=m_c.end() && v.size()>0 && !found){
+            if(*it->get_label()==v.at(0)){
+                found=true;
+            }else{
+                ++it;
+            }
+        }
+        if(found){
+            std::vector<T> v1=v;
+            v1.erase(v1.begin());
+            trie<T>& t=*it;
+            return t[v1];
+        }else
+            return *this;
     }
 
 /*streams*/
@@ -351,7 +444,7 @@
         if(t.get_children().empty()){
             os<<t.get_weight()<<" ";
         }
-        os<<"childern={";
+        os<<"children={";
         //os<<t.get_weight()<<" ";
         t.get_children().print();
         os<<"}";
