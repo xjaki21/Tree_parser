@@ -22,6 +22,9 @@ class bag{
         bag(bag&& b);
         ~bag();
         void clean();
+        bool clean_except(const Val& v);
+        void remove(const Val& v);
+
         Val& get_head();
         Val& get_tail();
         const Val& get_head() const;
@@ -57,8 +60,10 @@ class bag{
                 bag_iterator operator++(int);
                 bag_iterator& operator--();
                 bag_iterator operator--(int);
+
                 Cell* get_ptr();
                 bool operator==(bag_iterator const&) const;
+
                 bool operator!=(bag_iterator const&) const;
 
             private:
@@ -83,6 +88,8 @@ class bag{
                 const_bag_iterator operator++(int);
                 const_bag_iterator& operator--();
                 const_bag_iterator operator--(int);
+
+
                 const Cell* get_ptr() const;
                 bool operator==(const_bag_iterator const&) const;
                 bool operator!=(const_bag_iterator const&) const;
@@ -136,6 +143,55 @@ void bag<Val>::clean(){
         delete pc;
     }
     head=tail=nullptr;
+}
+template <typename Val>
+bool bag<Val>::clean_except(const Val& v){
+    pCell found=nullptr;
+    while(head!=nullptr){
+        if(&(head->val)==&v){
+            found=head;
+            head=head->next;
+            found->next=found->prev=nullptr;
+        }else{
+            pCell pc=head;
+            head=head->next;
+            delete pc;
+        }
+    }
+    if(found!=nullptr){
+
+        head=tail=found;
+
+    }
+    else
+        head=tail=nullptr;
+    return (found!=nullptr);
+}
+
+template <typename Val>
+void bag<Val>::remove(const Val& v){
+    pCell pc=head;
+    while(pc!=nullptr && !(&(pc->val)==&v)){
+        pc=pc->next;
+    }
+    if(pc!=nullptr){
+        if(pc!=head && pc!=tail){
+            pc->prev->next=pc->next;
+            pc->next->prev=pc->prev;
+            delete pc;
+        }else if(pc==head && pc==tail){
+            delete pc;
+            head=tail=nullptr;
+        }else if(pc==head){
+            head=head->next;
+            head->prev=nullptr;
+            delete pc;
+        }else if(pc==tail){
+            tail=tail->prev;
+            tail->next=nullptr;
+            delete pc;
+        }
+    }
 }
 
 template <typename Val>
@@ -336,11 +392,11 @@ typename bag<Val>::bag_iterator bag<Val>::bag_iterator::operator--(int){
     return *this;
 }
 
-
 template <typename Val>
 bool bag<Val>::bag_iterator::operator==(const bag<Val>::bag_iterator& b) const{
     return m_ptr==b.m_ptr;
 }
+
 template <typename Val>
 bool bag<Val>::bag_iterator::operator!=(const bag<Val>::bag_iterator& b) const{
     return m_ptr!=b.m_ptr;
@@ -355,7 +411,8 @@ typename bag<Val>::Cell* bag<Val>::bag_iterator::get_ptr(){
 template <typename Val>
 Val& bag<Val>::insert(bag<Val>::bag_iterator it,const Val& v){
     Cell* ptr=it.get_ptr();
-    if(false){
+    if(!empty()){
+        std::cout<<"insert"<<std::endl;
         pCell pn=new Cell{v,ptr,ptr->prev};
         if(ptr->prev!=nullptr){
             ptr->prev->next=pn;

@@ -29,16 +29,12 @@
     typename trie<T>::node_iterator& trie<T>::node_iterator::operator++(){
         if(m_ptr->get_parent()!=nullptr)
             m_ptr=m_ptr->get_parent();
-        else
-            throw parser_exception("OUT OF NODES");
         return *this;
     }
     template <typename T>
     typename trie<T>::node_iterator trie<T>::node_iterator::operator++(int){
         if(m_ptr->get_parent()!=nullptr)
             m_ptr=m_ptr->get_parent();
-        else
-            throw parser_exception("OUT OF NODES");
         return *this;
     }  
     template <typename T>
@@ -645,12 +641,14 @@
     void trie<T>::path_compress(){
         if(!m_c.empty()){
             auto it=m_c.begin();
-            if(get_parent()!=nullptr && m_c.next_to(*it)==*it){
+            if(get_label()!=nullptr && m_c.next_to(*it)==*it){
                 //compress
-                *m_l=*m_l+*it->get_label();
+                //*m_l=*m_l+*it->get_label();
                 trie<T> t=*it;
+                t.set_label(it->get_label());
+                t.path_compress();
                 *this=t;
-
+                *m_l+=*t.m_l;
             }else{
                 while(it!=m_c.end()){
                     it->path_compress();

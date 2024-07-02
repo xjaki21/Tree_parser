@@ -11,7 +11,7 @@
 
     template <typename T>
     typename trie<T>::node_iterator::reference trie<T>::node_iterator::operator*() const{
-        if(m_ptr->get_parent()!=nullptr && m_ptr->get_label()!=nullptr)
+        if(m_ptr!=nullptr && m_ptr->get_parent()!=nullptr && m_ptr->get_label()!=nullptr)
             return *(m_ptr->get_label());
         else
             throw parser_exception("LABEL IS NULL");
@@ -19,7 +19,7 @@
 
     template <typename T>
     typename trie<T>::node_iterator::pointer trie<T>::node_iterator::operator->() const{
-        if(m_ptr->get_parent()!=nullptr && m_ptr->get_label()!=nullptr)
+        if(m_ptr!=nullptr && m_ptr->get_parent()!=nullptr && m_ptr->get_label()!=nullptr)
             return m_ptr->get_label();
         else
             throw parser_exception("LABEL IS NULL");
@@ -27,18 +27,18 @@
 
     template <typename T>
     typename trie<T>::node_iterator& trie<T>::node_iterator::operator++(){
-        if(m_ptr->get_parent()!=nullptr)
+        if(m_ptr!=nullptr)
             m_ptr=m_ptr->get_parent();
         else
-            throw parser_exception("OUT OF NODES");
+            throw parser_exception("M_PTR IS NULL");
         return *this;
     }
     template <typename T>
     typename trie<T>::node_iterator trie<T>::node_iterator::operator++(int){
-        if(m_ptr->get_parent()!=nullptr)
+        if(m_ptr!=nullptr)
             m_ptr=m_ptr->get_parent();
         else
-            throw parser_exception("OUT OF NODES");
+            throw parser_exception("M_PTR IS NULL");
         return *this;
     }  
     template <typename T>
@@ -58,7 +58,7 @@
 
     template <typename T>
     typename trie<T>::const_node_iterator::reference trie<T>::const_node_iterator::operator*() const{
-        if(m_ptr->get_parent()!=nullptr && m_ptr->get_label()!=nullptr)
+        if(m_ptr!=nullptr && m_ptr->get_parent()!=nullptr && m_ptr->get_label()!=nullptr)
             return *m_ptr->get_label();
         else
             throw parser_exception("LABEL IS NULL");    
@@ -66,7 +66,7 @@
 
     template <typename T>
     typename trie<T>::const_node_iterator::pointer trie<T>::const_node_iterator::operator->() const{
-        if(m_ptr->get_parent()!=nullptr && m_ptr->get_label()!=nullptr)
+        if(m_ptr!=nullptr && m_ptr->get_parent()!=nullptr && m_ptr->get_label()!=nullptr)
             return m_ptr->get_label();
         else
             throw parser_exception("LABEL IS NULL");    
@@ -74,16 +74,18 @@
 
     template <typename T>
     typename trie<T>::const_node_iterator& trie<T>::const_node_iterator::operator++(){
-        if(m_ptr->get_parent()!=nullptr)
+        if(m_ptr!=nullptr)
             m_ptr=m_ptr->get_parent();
         else
-            throw parser_exception("OUT OF NODES");
+            throw parser_exception("M_PTR IS NULL");
         return *this;
     }
     template <typename T>
     typename trie<T>::const_node_iterator trie<T>::const_node_iterator::operator++(int){
-        if(m_ptr->get_parent()!=nullptr)
+        if(m_ptr!=nullptr)
             m_ptr=m_ptr->get_parent();
+        else
+            throw parser_exception("M_PTR IS NULL");
         return *this;
     }  
     template <typename T>
@@ -101,52 +103,59 @@
     }
     template <typename T>
     typename trie<T>::leaf_iterator::reference trie<T>::leaf_iterator::operator*() const{
-        if(m_ptr->get_parent()!=nullptr && m_ptr->get_label()!=nullptr)
+        if(m_ptr!=nullptr && m_ptr->get_parent()!=nullptr && m_ptr->get_label()!=nullptr)
             return *m_ptr->get_label();
         else
             throw parser_exception("LABEL IS NULL");  
     }
     template <typename T>
     typename trie<T>::leaf_iterator::pointer trie<T>::leaf_iterator::operator->() const{
-        if(m_ptr->get_parent()!=nullptr && m_ptr->get_label()!=nullptr)
+        if(m_ptr!=nullptr && m_ptr->get_parent()!=nullptr && m_ptr->get_label()!=nullptr)
             return m_ptr->get_label();
         else
             throw parser_exception("LABEL IS NULL");  
     }
     template <typename T>
     typename trie<T>::leaf_iterator& trie<T>::leaf_iterator::operator++(){
-
-        if(m_ptr->get_parent()!=nullptr){
-            trie<T>& parent=*m_ptr->get_parent();
-            trie<T>& next=parent.get_children().next_to(get_leaf());
-            if(next==*m_ptr && next.get_parent()==m_ptr->get_parent() && *next.get_label()==*m_ptr->get_label()){
-                leaf_iterator lf=leaf_iterator(&parent);
-                ++lf;
-                m_ptr=lf.m_ptr;
+        if(m_ptr!=nullptr){
+            if(m_ptr->get_parent()!=nullptr){
+                trie<T>& parent=*m_ptr->get_parent();
+                trie<T>& next=parent.get_children().next_to(get_leaf());
+                if(next==*m_ptr && next.get_parent()==m_ptr->get_parent() && *next.get_label()==*m_ptr->get_label()){
+                    leaf_iterator lf=leaf_iterator(&parent);
+                    ++lf;
+                    m_ptr=lf.m_ptr;
+                }else{
+                    auto next_leaf=next.begin();
+                    m_ptr=next_leaf.m_ptr;
+                }
             }else{
-                auto next_leaf=next.begin();
-                m_ptr=next_leaf.m_ptr;
+                m_ptr=nullptr;    
             }
         }else{
-            m_ptr=nullptr;    
+            throw parser_exception("ITERATOR IS NULL");
         }
         return *this;
     }
     template <typename T>
     typename trie<T>::leaf_iterator trie<T>::leaf_iterator::operator++(int){
-        if(m_ptr->get_parent()!=nullptr){
-            trie<T>& parent=*m_ptr->get_parent();
-            trie<T>& next=parent.get_children().next_to(get_leaf());
-            if(next==*m_ptr && next.get_parent()==m_ptr->get_parent() && *next.get_label()==*m_ptr->get_label()){
-                leaf_iterator lf=leaf_iterator(&parent);
-                ++lf;
-                m_ptr=lf.m_ptr;
+        if(m_ptr!=nullptr){
+            if(m_ptr->get_parent()!=nullptr){
+                trie<T>& parent=*m_ptr->get_parent();
+                trie<T>& next=parent.get_children().next_to(get_leaf());
+                if(next==*m_ptr && next.get_parent()==m_ptr->get_parent() && *next.get_label()==*m_ptr->get_label()){
+                    leaf_iterator lf=leaf_iterator(&parent);
+                    lf++;
+                    m_ptr=lf.m_ptr;
+                }else{
+                    auto next_leaf=next.begin();
+                    m_ptr=next_leaf.m_ptr;
+                }
             }else{
-                auto next_leaf=next.begin();
-                m_ptr=next_leaf.m_ptr;
+                m_ptr=nullptr;    
             }
         }else{
-            m_ptr=nullptr;    
+            throw parser_exception("ITERATOR IS NULL");
         }
         return *this;
     }
@@ -176,51 +185,59 @@
     }
     template <typename T>
     typename trie<T>::const_leaf_iterator::reference trie<T>::const_leaf_iterator::operator*() const{
-        if(m_ptr->get_parent()!=nullptr && m_ptr->get_label()!=nullptr)
+        if(m_ptr!=nullptr && m_ptr->get_parent()!=nullptr && m_ptr->get_label()!=nullptr)
             return *m_ptr->get_label();
         else
             throw parser_exception("LABEL IS NULL");
     }
     template <typename T>
     typename trie<T>::const_leaf_iterator::pointer trie<T>::const_leaf_iterator::operator->() const{
-        if(m_ptr->get_parent()!=nullptr && m_ptr->get_label()!=nullptr)
+        if(m_ptr!=nullptr && m_ptr->get_parent()!=nullptr && m_ptr->get_label()!=nullptr)
             return m_ptr->get_label();
         else
             throw parser_exception("LABEL IS NULL");
     }
     template <typename T>
     typename trie<T>::const_leaf_iterator& trie<T>::const_leaf_iterator::operator++(){
-        if(m_ptr->get_parent()!=nullptr){
-            const trie<T>& parent=*m_ptr->get_parent();
-            const trie<T>& next=parent.get_children().next_to(get_leaf());
-            if(next==*m_ptr && next.get_parent()==m_ptr->get_parent() && *next.get_label()==*m_ptr->get_label()){
-                const_leaf_iterator lf=const_leaf_iterator(&parent);
-                ++lf;
-                m_ptr=lf.m_ptr;
+        if(m_ptr!=nullptr){
+            if(m_ptr->get_parent()!=nullptr){
+                const trie<T>& parent=*m_ptr->get_parent();
+                const trie<T>& next=parent.get_children().next_to(get_leaf());
+                if(next==*m_ptr && next.get_parent()==m_ptr->get_parent() && *next.get_label()==*m_ptr->get_label()){
+                    const_leaf_iterator lf=const_leaf_iterator(&parent);
+                    ++lf;
+                    m_ptr=lf.m_ptr;
+                }else{
+                    auto next_leaf=next.begin();
+                    m_ptr=next_leaf.m_ptr;
+                }
             }else{
-                auto next_leaf=next.begin();
-                m_ptr=next_leaf.m_ptr;
+                m_ptr=nullptr;    
             }
         }else{
-            m_ptr=nullptr;    
+            throw parser_exception("ITERATOR IS NULL");
         }
         return *this;
     }
     template <typename T>
     typename trie<T>::const_leaf_iterator trie<T>::const_leaf_iterator::operator++(int){
-        if(m_ptr->get_parent()!=nullptr){
-            const trie<T>& parent=*m_ptr->get_parent();
-            const trie<T>& next=parent.get_children().next_to(get_leaf());
-            if(next==*m_ptr && next.get_parent()==m_ptr->get_parent() && *next.get_label()==*m_ptr->get_label()){
-                const_leaf_iterator lf=const_leaf_iterator(&parent);
-                ++lf;
-                m_ptr=lf.m_ptr;
+        if(m_ptr!=nullptr){
+            if(m_ptr->get_parent()!=nullptr){
+                const trie<T>& parent=*m_ptr->get_parent();
+                const trie<T>& next=parent.get_children().next_to(get_leaf());
+                if(next==*m_ptr && next.get_parent()==m_ptr->get_parent() && *next.get_label()==*m_ptr->get_label()){
+                    const_leaf_iterator lf=const_leaf_iterator(&parent);
+                    lf++;
+                    m_ptr=lf.m_ptr;
+                }else{
+                    auto next_leaf=next.begin();
+                    m_ptr=next_leaf.m_ptr;
+                }
             }else{
-                auto next_leaf=next.begin();
-                m_ptr=next_leaf.m_ptr;
+                m_ptr=nullptr;    
             }
         }else{
-            m_ptr=nullptr;    
+            throw parser_exception("ITERATOR IS NULL");
         }
         return *this;
     }
@@ -317,14 +334,29 @@
     }
     template <typename T>
     trie<T>::trie(trie<T>&& t){
+/*
         m_p=nullptr;
         m_l=t.m_l;
         t.m_l=nullptr;
         m_w=t.m_w;
+        t.m_w=0.0;
         for(auto it=t.m_c.begin();it!=t.m_c.end();++it){
             add_child(*it);
         }
         t.m_c.clean();
+        */
+        m_p=nullptr;
+        m_l=nullptr;
+        m_w=t.m_w;
+        //t.m_w=0.0;
+        for(auto it=t.m_c.begin();it!=t.m_c.end();++it){
+            add_child(*it);
+        }
+        t.m_c.clean();        
+
+        if(t.m_p!=nullptr){
+            t.m_p->m_c.remove(t);
+        }
     }
 
 
@@ -342,15 +374,20 @@
     trie<T>& trie<T>::operator=(trie<T> const& t){
         if(this!=&t){
             m_w=t.m_w;
-            m_c.clean();
-            for(auto it=t.m_c.begin();it!=t.m_c.end();++it){
-                add_child(*it);
+            bool child_param=m_c.clean_except(t);; //controllo se il parametro è un figlio dell'albero
+
+            for(auto it1=t.m_c.begin();it1!=t.m_c.end();++it1){
+                add_child(*it1);
+            }
+            if(child_param){
+                m_c.remove(t);
             }
         }
         return *this;
     }
     template <typename T>
     trie<T>& trie<T>::operator=(trie<T>&& t){
+        /*
         if(this!=&t){
             m_w=t.m_w;
             m_c.clean();
@@ -360,6 +397,24 @@
             t.m_c.clean();
         }
         return *this;
+        */
+       
+        if(this!=&t){
+            m_w=t.m_w;
+            bool child_param=m_c.clean_except(t);; //controllo se il parametro è un figlio dell'albero
+            for(auto it1=t.m_c.begin();it1!=t.m_c.end();++it1){
+                add_child(*it1);
+            }
+            if(child_param){
+                m_c.remove(t);
+            }else{
+                if(t.m_p!=nullptr){
+                    t.m_p->m_c.remove(t);
+                }
+            }
+        }
+        return *this;
+        
     }
 
 
@@ -393,7 +448,7 @@
         else{
             m_w=0.0;
             //uso iteratore di bag per inserire il child in ordine;        
-            
+
             if(!m_c.empty()){
                 auto it=m_c.begin();
                 bool inserted=false;
@@ -632,6 +687,7 @@
                     }
                 }
                 if(!found){
+                    std::cout<<"add"<<std::endl;
                     add_child(*it2);
                 }
             }
@@ -645,12 +701,14 @@
     void trie<T>::path_compress(){
         if(!m_c.empty()){
             auto it=m_c.begin();
-            if(get_parent()!=nullptr && m_c.next_to(*it)==*it){
+            if(get_label()!=nullptr && m_c.next_to(*it)==*it){
                 //compress
-                *m_l=*m_l+*it->get_label();
+                //*m_l=*m_l+*it->get_label();
                 trie<T> t=*it;
+                t.set_label(it->get_label());
+                t.path_compress();
                 *this=t;
-
+                *m_l+=*t.m_l;
             }else{
                 while(it!=m_c.end()){
                     it->path_compress();
@@ -778,13 +836,16 @@ trie<T> ONE_LEAF(std::istream& is){
 }
     template <typename T>
     trie<T> CHILD_PARSER(std::istream& is){
-       // skip_blank_spaces(is);ù
+        skip_blank_spaces(is);
         char c=0;
         trie<T> t;
 
         T label;
         is>>label;
         t.set_label(&label);
+        c=is.get();
+        if(c!=' ') throw parser_exception("CHILDREN FORMAT ERROR");
+        
         if(is_children(is)){
             t=TRIE_PARSER<T>(is);
         }else{

@@ -20,50 +20,34 @@ void read_trie(trie<T>& t,string file_name){
     }
 }
 
-template <typename T>
-void extract_sequences(const trie<T>& t){
 
+trie<char> test_move(){
+    trie<char> t(1.3);
+    return t;
 }
 
 int main(){
-    trie<int> t1;
-    read_trie(t1,"trie_int1.tr");
-    cout<<"T1: "<<t1<<endl;
-    t1.path_compress();
-    cout<<"T1 COMPRESSED = "<<t1<<endl;
+    try{
+        trie<string> t1(1.1);
+        read_trie(t1,"trie_int1.tr");
+        cout<<"T1: "<<t1<<endl;
+        trie<string> t2=t1;
+        cout<<"T2: "<<t2<<endl;
+        cout<<(t1==t2)<<endl;
+        t1+=t1[{"z"}];
+        cout<<"T1: "<<t1<<endl;
 
-    trie<string> t2;
-    read_trie(t2,"trie_string2.tr");
-    cout<<"T2: "<<t2<<endl;
-    t2.path_compress();
-    cout<<"T2 COMPRESSED = "<<t2<<endl;
+        trie<string> t3;
+        read_trie(t3,"trie_string1.tr");
+        cout<<"T3: "<<t3<<endl;
+
+        t3=t3+t3;
+        cout<<"T3+T2: "<<t3<<endl;
 
 
-    const trie<int> t=t1;
-    for (auto leaf_it = t.begin(); leaf_it != t.end(); ++leaf_it) {
-        trie<int>::const_node_iterator node_it = leaf_it; // we convert leaf_it into node_it to navigate from leaf to root
-        std::vector<int> s;
-        while (node_it != t.root()) {
-            s.push_back(*node_it);
-            ++node_it;
-        }
-        std::reverse(s.begin(), s.end());
-        for (auto const& x: s) std::cout << x << ' ';
-        std::cout << '\n';
+    }catch(const parser_exception& e){
+        cout<<"Parser Exception: "<<e.what()<<endl;
     }
-
-    for (auto leaf_it = t2.begin(); leaf_it != t2.end(); ++leaf_it) {
-        trie<string>::node_iterator node_it = leaf_it; // we convert leaf_it into node_it to navigate from leaf to root
-        std::vector<string> s;
-        while (node_it != t2.root()) {
-            s.push_back(*node_it);
-            ++node_it;
-        }
-        std::reverse(s.begin(), s.end());
-        for (auto const& x: s) std::cout << x << ' ';
-        std::cout << '\n';
-    }
-
-    cout<<t1.max()<<endl;
-    cout<<t2.max()<<endl;
+    // Aprire il file per la lettura
+   
 }

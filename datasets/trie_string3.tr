@@ -1,0 +1,17 @@
+children={
+    z children={
+        gatto children={
+            nero 5.5 children={}
+        },
+        cane children={
+            bassotto 20.3 children={}
+        },
+        a children={
+            a1 10 children={},
+            a2 30 children={}
+        }
+
+    },
+    d 1.1 children={}
+
+}
