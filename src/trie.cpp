@@ -334,17 +334,6 @@
     }
     template <typename T>
     trie<T>::trie(trie<T>&& t){
-/*
-        m_p=nullptr;
-        m_l=t.m_l;
-        t.m_l=nullptr;
-        m_w=t.m_w;
-        t.m_w=0.0;
-        for(auto it=t.m_c.begin();it!=t.m_c.end();++it){
-            add_child(*it);
-        }
-        t.m_c.clean();
-        */
         m_p=nullptr;
         m_l=nullptr;
         m_w=t.m_w;
@@ -353,9 +342,11 @@
             add_child(*it);
         }
         t.m_c.clean();        
-
         if(t.m_p!=nullptr){
             t.m_p->m_c.remove(t);
+        }else if(t.m_l!=nullptr){
+            delete t.m_l;
+            t.m_l=nullptr;
         }
     }
 
@@ -387,29 +378,21 @@
     }
     template <typename T>
     trie<T>& trie<T>::operator=(trie<T>&& t){
-        /*
-        if(this!=&t){
-            m_w=t.m_w;
-            m_c.clean();
-            for(auto it=t.m_c.begin();it!=t.m_c.end();++it){
-                add_child(*it);
-            }
-            t.m_c.clean();
-        }
-        return *this;
-        */
-       
         if(this!=&t){
             m_w=t.m_w;
             bool child_param=m_c.clean_except(t);; //controllo se il parametro è un figlio dell'albero
             for(auto it1=t.m_c.begin();it1!=t.m_c.end();++it1){
                 add_child(*it1);
             }
+            t.m_c.clean();
             if(child_param){
                 m_c.remove(t);
             }else{
                 if(t.m_p!=nullptr){
                     t.m_p->m_c.remove(t);
+                }else if(t.m_l!=nullptr){
+                    delete t.m_l;
+                    t.m_l=nullptr;
                 }
             }
         }
@@ -646,24 +629,36 @@
 /* facultative: union */
     template <typename T>
     trie<T> trie<T>::operator+(trie<T> const& t) const{
-        trie<T> sum=*this;
+        trie<T> sum;
         auto& bag1=get_children();
         auto& bag2=t.get_children();
         if(bag1.empty() && bag2.empty()){
+            sum=*this;
             sum.m_w+=t.get_weight();
-        }else{
+        }else if(bag1.empty() && !bag2.empty()){
+            sum=t;
+            for(auto it1=sum.begin();it1!=sum.end();++it1){
+                it1.get_leaf().m_w+=m_w;
+            }
+        }else if(!bag1.empty() && bag2.empty()){
+            sum=*this;
+            for(auto it1=sum.begin();it1!=sum.end();++it1){
+                it1.get_leaf().m_w+=t.m_w;
+            }
+        }
+        else{
+            sum=*this;
             for(auto it2=bag2.begin();it2!=bag2.end();++it2){
                 bool found=false;
                 for(auto it1=bag1.begin();it1!=bag1.end();++it1){
                     if(*it2->get_label()==*it1->get_label()){
                         found=true;
                         trie<T> t=*it1+*it2;
-                        t.m_w=it1->get_weight()+it2->get_weight();
                         sum[{*it1->get_label()}]=t;
                     }
                 }
                 if(!found){
-                    sum.add_child(*it2);
+                    sum.add_child(*it2);    
                 }
             }
         }
@@ -675,20 +670,33 @@
         auto& bag2=t.get_children();
         if(bag1.empty() && bag2.empty()){
             m_w+=t.get_weight();
-        }else{
+        }else if(bag1.empty() && !bag2.empty()){
+            
+            for(auto it2=bag2.begin();it2!=bag2.end();++it2){
+                add_child(*it2);
+            }
+
+            for(auto it1=this->begin();it1!=this->end();++it1){
+                it1.get_leaf().m_w+=m_w;
+            }
+
+        }else if(!bag1.empty() && bag2.empty()){
+            for(auto it1=this->begin();it1!=this->end();++it1){
+                it1.get_leaf().m_w+=t.m_w;
+            }
+        }
+        else{
             for(auto it2=bag2.begin();it2!=bag2.end();++it2){
                 bool found=false;
                 for(auto it1=bag1.begin();it1!=bag1.end();++it1){
                     if(*it2->get_label()==*it1->get_label()){
                         found=true;
                         trie<T> t=*it1+*it2;
-                        t.m_w=it1->get_weight()+it2->get_weight();
                         this->operator[]({*it1->get_label()})=t;
                     }
                 }
                 if(!found){
-                    std::cout<<"add"<<std::endl;
-                    add_child(*it2);
+                    add_child(*it2);    
                 }
             }
         }
@@ -705,10 +713,19 @@
                 //compress
                 //*m_l=*m_l+*it->get_label();
                 trie<T> t=*it;
-                t.set_label(it->get_label());
-                t.path_compress();
-                *this=t;
-                *m_l+=*t.m_l;
+                if(it->get_label()!=nullptr){
+                    t.set_label(it->get_label());
+                    t.path_compress();
+                    if(this!=&t){
+                        m_w=t.m_w;
+                        m_c.clean();
+                        for(auto it=t.m_c.begin();it!=t.m_c.end();++it){
+                            add_child(*it);
+                        }
+                    }
+                    *m_l+=*t.m_l;
+                }else
+                    throw parser_exception("ONE LABEL IS NULL");
             }else{
                 while(it!=m_c.end()){
                     it->path_compress();
@@ -822,13 +839,13 @@ trie<T> ONE_LEAF(std::istream& is){
         double weight=0.0;
         is>>weight;
         c=is.get();
-        if(c!=' ') throw parser_exception("CHILDREN FORMAT ERROR");
-        if(!is_children(is)) throw parser_exception("LEAF DOESNT END WITH children={}");
-        if(!check_character(is,'=')) throw parser_exception("LEAF DOESNT END WITH children={}");
+        if(c!=' ') throw parser_exception("CHILDREN FORMAT ERROR IN ONE_LEAF");
+        if(!is_children(is)) throw parser_exception("ONE_LEAF LEAF DOESNT END WITH children={}1");
+        if(!check_character(is,'=')) throw parser_exception("ONE_LEAF LEAF DOESNT END WITH children={}2");
         is>>c;
-        if(!check_character(is,'{')) throw parser_exception("LEAF DOESNT END WITH children={}");
+        if(!check_character(is,'{')) throw parser_exception("ONE_LEAF LEAF DOESNT END WITH children={}3");
         is>>c;
-        if(!check_character(is,'}')) throw parser_exception("LEAF DOESNT END WITH children={}");
+        if(!check_character(is,'}')) throw parser_exception("ONE_LEAF LEAF DOESNT END WITH children={}4");
         is>>c;
         t.set_weight(weight);
     }
@@ -836,16 +853,13 @@ trie<T> ONE_LEAF(std::istream& is){
 }
     template <typename T>
     trie<T> CHILD_PARSER(std::istream& is){
-        skip_blank_spaces(is);
+       // skip_blank_spaces(is);ù
         char c=0;
         trie<T> t;
 
         T label;
         is>>label;
         t.set_label(&label);
-        c=is.get();
-        if(c!=' ') throw parser_exception("CHILDREN FORMAT ERROR");
-        
         if(is_children(is)){
             t=TRIE_PARSER<T>(is);
         }else{
@@ -853,13 +867,13 @@ trie<T> ONE_LEAF(std::istream& is){
             double weight=0.0;
             is>>weight;
             c=is.get();
-            if(c!=' ') throw parser_exception("CHILDREN FORMAT ERROR");
+            if(c!=' ') throw parser_exception("CHILDREN FORMAT ERROR IN CHILD_PARSER");
             if(!is_children(is)) throw parser_exception("LEAF DOESNT END WITH children={}");
-            if(!check_character(is,'=')) throw parser_exception("LEAF DOESNT END WITH children={}");
+            if(!check_character(is,'=')) throw parser_exception("LEAF DOESNT END WITH children={}1");
             is>>c;
-            if(!check_character(is,'{')) throw parser_exception("LEAF DOESNT END WITH children={}");
+            if(!check_character(is,'{')) throw parser_exception("LEAF DOESNT END WITH children={}2");
             is>>c;
-            if(!check_character(is,'}')) throw parser_exception("LEAF DOESNT END WITH children={}");
+            if(!check_character(is,'}')) throw parser_exception("LEAF DOESNT END WITH children={}3");
             is>>c;
             t.set_weight(weight);
         }
@@ -869,10 +883,10 @@ trie<T> ONE_LEAF(std::istream& is){
     trie<T> TRIE_PARSER(std::istream& is){
         char c=0;
 
-        if(!check_character(is,'=')) throw parser_exception("FILE IS NOT VALID");
+        if(!check_character(is,'=')) throw parser_exception("FILE IS NOT VALID =");
         is>>c;
 
-        if(!check_character(is,'{')) throw parser_exception("FILE IS NOT VALID");
+        if(!check_character(is,'{')) throw parser_exception("FILE IS NOT VALID {");
         is>>c;
         trie<T> t(0.0);
 
@@ -887,11 +901,11 @@ trie<T> ONE_LEAF(std::istream& is){
                 is>>c;
             }
        }
-        if(!check_character(is,'}')) throw parser_exception("FILE IS NOT VALID: NOT ENDS WITH '}'");
+        if(!check_character(is,'}')) throw parser_exception("FILE IS NOT VALID: NOT ENDS WITH '}' 1");
         if(is>>c){
             return t;
         }else{
-            throw parser_exception("FILE IS NOT VALID: NOT ENDS WITH '}'");
+            throw parser_exception("FILE IS NOT VALID: NOT ENDS WITH '}' 2");
         }
     } 
 
@@ -906,7 +920,7 @@ trie<T> ONE_LEAF(std::istream& is){
         char c=0;
         while (is.peek()!=EOF && is.get(c)) {
             if (!std::isspace(c)) {
-                throw parser_exception("FILE IS NOT VALID: EXTRA CHARACTERS AFTER '}'");
+                throw parser_exception("FILE IS NOT VALID: EXTRA CHARACTERS AFTER '}' 3");
             }
         }
         return is;
