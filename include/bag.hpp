@@ -412,7 +412,6 @@ template <typename Val>
 Val& bag<Val>::insert(bag<Val>::bag_iterator it,const Val& v){
     Cell* ptr=it.get_ptr();
     if(!empty()){
-        std::cout<<"insert"<<std::endl;
         pCell pn=new Cell{v,ptr,ptr->prev};
         if(ptr->prev!=nullptr){
             ptr->prev->next=pn;
